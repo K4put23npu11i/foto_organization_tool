@@ -1,0 +1,7 @@
+{
+	"source_path": "Data_in",
+	"destination_path": "Data_out",
+	"delete_empty_source": "True",
+	"include_year_in_destination_folder_level": "True",
+	"delete_copy_pictures": "True"
+}
