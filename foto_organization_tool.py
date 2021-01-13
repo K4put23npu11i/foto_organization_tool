@@ -11,7 +11,6 @@ import shutil
 import re
 import json
 import os
-import sys
 
 
 # Configure logging
@@ -40,11 +39,6 @@ else:
 # Measure running time:
 start_time = datetime.now()
 logger.info('Script started successfully!')
-
-
-image_folder = "./Data_in" 
-output_folder = "./Data_out"
-filename_regex = r"(?P<filename>.*)\.(?P<extension>JPG|jpg|jpeg|PNG|png|tiff|tif|TIF|BMP|bmp)"
 
 
 def initialize() -> dict:
@@ -177,10 +171,24 @@ def await_user_input(message: str, allowed_answers: list = None) -> str:
     return user_input
 
 
-def get_size_of_directory(start_path):
+def get_size_of_directory(start_path: str) -> int:
     """
+    Walks a path and adds the sizes of all directories to get the total size in bytes of the given path
+    
+    Parameters
+    ----------
+    start_path: str
+        string with path to directory
+    
+    Returns
+    ------
+    total_size: int
+        int showing the size of the directory in bytes
     """
     total_size = 0
+    if not os.path.exists(start_path):
+        return None
+    
     for path, dirs, files in os.walk(start_path):
         for f in files:
             fp = os.path.join(path, f)
@@ -188,7 +196,22 @@ def get_size_of_directory(start_path):
     return total_size
 
 
-def format_bytes(size):
+def format_bytes(size: int) -> (int, str):
+    """
+    Formates the given size in bytes into power labes and rounds value in three digits
+    
+    Parameters
+    ----------
+    size: int
+        int showing the size of a directory or file in bytes
+    
+    Returns
+    ------
+    new_size: int
+        int showing the size of a directory or file rounded
+    unit: str
+        showing the new unit of the size with power label
+    """
     # 2**10 = 1024
     power = 2**10
     n = 0
@@ -196,17 +219,27 @@ def format_bytes(size):
     while size > power:
         size /= power
         n += 1
-    return round(size, 2), power_labels[n]+'bytes'
+        
+    new_size = round(size, 3)
+    unit = power_labels[n]+'bytes'
+    return new_size, unit
 
 
-def get_all_files_from_source(src_path: str) -> (list, int):
+def get_all_files_from_source(src_path: str) -> list:
     """
+    walks the given directory and lists all files with path in the given directory
+    
+    Parameters
+    ----------
+    src_path: str
+        string to the directory
+    
+    Returns
+    ------
+    files: list
+        list of all files in the given directory
     """
     files = []
-    src_size = 0
-    
-    # get size of source folder
-    src_size = get_size_of_directory(src_path)
     
     # get all files from source folder
     all_files_walk = []
@@ -225,7 +258,7 @@ def get_all_files_from_source(src_path: str) -> (list, int):
         if os.path.isfile(file_path):
             files.append(file_path)
 
-    return files, src_size
+    return files
 
 
 def filter_files_with_regex(files_list: list, filename_regex=r"") -> (list, list):
@@ -359,7 +392,7 @@ def move_other_files(files: list, config: dict) -> (list, list, int):
         (path, filename_full) = os.path.split(file)
         filename = filename_full.split('.')[0]
         extension = filename_full.split('.')[1]
-        base_path = os.path.join(output_folder, "Other Files", f"{extension}_Files")
+        base_path = os.path.join(config["destination_path"], "Other Files", f"{extension}_Files")
         
         # Create base_path folder if not exists
         if not os.path.exists(base_path):
@@ -395,7 +428,7 @@ def delete_copy_pictures_from_destination(config: dict):
     path = config["destination_path"]
     
     # get all files in destination folder
-    all_files, size = get_all_files_from_source(src_path=path)
+    all_files = get_all_files_from_source(src_path=path)
     
     # get files with copies
     quene = []
@@ -440,7 +473,7 @@ def final_comprehention_and_print_message(config: dict, results_dict: dict):
     """
     print_mes = "\n\n-----  YEAH DONE  -----\n"
     
-    print_mes += f"\nIn total {results_dict['all_files']['all_files_count']} elements where found in the source folder."
+    print_mes += f"\nIn total {results_dict['all_files']['all_files_count']} elements where found in the source folder "
     print_mes += f"({results_dict['filter_with_regex']['imgages_count']} pictures, {results_dict['filter_with_regex']['others_count']} other files)\n"
     
     
@@ -455,7 +488,8 @@ def main():
     results_dict = {}
     
     if config is not None:
-        all_files_list, src_size_bytes = get_all_files_from_source(src_path=config["source_path"])
+        all_files_list = get_all_files_from_source(src_path=config["source_path"])
+        src_size_bytes = get_size_of_directory(start_path=config["source_path"])
         src_size_format , src_size_unit = format_bytes(size=src_size_bytes)
         results_dict["all_files"] = {
                 "all_files": all_files_list,
@@ -515,8 +549,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-
+#    main()
+    print()
 
 # Measure running time:
 end_time = datetime.now()
