@@ -263,6 +263,19 @@ def get_all_files_from_source(src_path: str) -> list:
 
 def filter_files_with_regex(files_list: list, filename_regex=r"") -> (list, list):
     """
+    Splits list of input filenames into matching and non-matching with a regex.
+    
+    Parameters
+    ----------
+    files_list: list
+        list of filename to be split up
+    
+    Returns
+    ------
+    imgs: list
+        list of all files matching the regex
+    others: list
+        list of all files not matching the regex
     """
     imgs = []
     others = []
@@ -280,11 +293,30 @@ def filter_files_with_regex(files_list: list, filename_regex=r"") -> (list, list
             continue
         imgs.append(file)
     
+    assert len(files_list) == (len(imgs) + len(others)), "Length of lists do not match!"
+    
     return imgs, others
 
 
 def create_dst_path_for_file(base_path, filename, extension):
+    """
+    A destination path is created with a given base, filename and extension. If the file already exists a copy label 
+    will be included
     
+    Parameters
+    ----------
+    base_path: str
+        basic path of destination as string
+    filename: str
+        name of the file to be created as string
+    extension: str
+        extension of the file to be created as string
+    
+    Returns
+    ------
+    dst_path: str
+        path including base, filename and extension as string
+    """
     # Create base_path folder if not exists
     if not os.path.exists(base_path):
         os.makedirs(base_path)
@@ -307,6 +339,26 @@ def create_dst_path_for_file(base_path, filename, extension):
 
 def extract_exif_from_image_and_move_to_dest_folder(imgs: list, config: dict) -> (list, list, list, int):
     """
+    Extracts the needed information of the photos, creates the corresponding destination path and moves the file 
+    to its new direction. Creates lists to follow the process.
+    
+    Parameters
+    ----------
+    imgs: list
+        list of paths to the pictures
+    config: dict
+        loaded configuration as dictionary
+    
+    Returns
+    ------
+    success_list: list
+        list of images that got moved successully
+    copy_list: list
+        list of images that got moved successully and has the label "Kopie" in its name
+    problem_list: list
+        list of images where a problem occured in the process
+    diff_time_seconds: int
+        measure how long this function needed to run in seconds
     """
     start = datetime.now()
     success_list = []
@@ -383,6 +435,23 @@ def extract_exif_from_image_and_move_to_dest_folder(imgs: list, config: dict) ->
 
 def move_other_files(files: list, config: dict) -> (list, list, int):
     """
+    Extracts the datatype of the files, creates folders and moves the files to its new directory
+    
+    Parameters
+    ----------
+    files: list
+        list of paths to the other files
+    config: dict
+        loaded configuration as dictionary
+    
+    Returns
+    ------
+    success_files: list
+        list of images that got moved successully
+    problem_files: list
+        list of images where a problem occured in the process
+    diff_time_seconds: int
+        measure how long this function needed to run in seconds
     """
     start = datetime.now()
     success_files = []
@@ -415,6 +484,18 @@ def move_other_files(files: list, config: dict) -> (list, list, int):
 
 def delete_empty_folders(directory: str, levels: int =10):
     """
+    Loop over given directory and delete empty folders
+    
+    Parameters
+    ----------
+    directory: str
+        base path to loop through
+    levels: int
+        amount of iterations, equals the level of directories topdown
+    
+    Returns
+    ------
+
     """
     for i in range(0, levels):
         for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
@@ -422,8 +503,22 @@ def delete_empty_folders(directory: str, levels: int =10):
                 os.rmdir(dirpath)
 
 
-def delete_copy_pictures_from_destination(config: dict):
+def delete_copy_pictures_from_destination(config: dict) -> (list, list):
     """
+    Loop over destination directory and collect all files with "Kopie" in it. Compare these file with the original and
+    delete the copy if the sizes match.
+    
+    Parameters
+    ----------
+    dconfig: dict
+        loaded configuration as dictionary, for the destination path
+    
+    Returns
+    ------
+    deleted_files: list
+        files that where deleted successfully
+    problem_files: list
+        files that could not be deleted
     """
     path = config["destination_path"]
     
@@ -465,11 +560,25 @@ def delete_copy_pictures_from_destination(config: dict):
         for file in del_files:
             problem_files.append((file, "Could not be deleted"))
             
+    assert len(quene) == len(deleted_files) + len(problem_files), "Length of delete lists do not match"
+            
     return deleted_files, problem_files
 
 
 def final_comprehention_and_print_message(config: dict, results_dict: dict):
     """
+    Builds the final print message to show performace statistics and kpis
+    
+    Parameters
+    ----------
+    config: dict
+        loaded configuration as dictionary
+    results_dict: dict
+        collected information about process in previous functions
+    
+    Returns
+    ------
+    
     """
     print_mes = "\n\n-----  YEAH DONE  -----\n"
     
@@ -482,6 +591,15 @@ def final_comprehention_and_print_message(config: dict, results_dict: dict):
 
 def main():
     """
+    Main function, will call all necessary functions in the needed order
+    
+    Parameters
+    ----------
+    
+    Returns
+    ------
+    results_dict: dict
+        dictionary collecting all produced results
     """
     print("Welcome to the Foto Organization Tool!")
     config = initialize()
@@ -517,7 +635,8 @@ def main():
                 "imgs_sucs": imgs_sucs,
                 "imgs_copy": imgs_copy,
                 "imgs_prob": imgs_prob,
-                "diff_time_exif": diff_time_exif}
+                "diff_time_exif": diff_time_exif
+                }
         
         print("\nNow the no picture files will be sorted and moved. This could also take some time...")
         f_sucs, f_prob, moving_time = move_other_files(files=other_files, config=config)
@@ -545,12 +664,12 @@ def main():
     else:
         print("Please check your configuration and start again!")
         
-        return None
+        return results_dict
 
 
 if __name__ == "__main__":
-#    main()
-    print()
+    results_dict = main()
+    
 
 # Measure running time:
 end_time = datetime.now()
