@@ -11,6 +11,7 @@ import shutil
 import re
 import json
 import os
+import sys
 
 
 # Configure logging
@@ -372,6 +373,7 @@ def extract_exif_from_image_and_move_to_dest_folder(imgs: list, config: dict) ->
     else: 
         include_year = False 
     
+    sys.stdout.flush() # Force output of previous prints()
     # loop over images
     for image_path in tqdm(imgs):
 #        print(image_path)
@@ -425,7 +427,7 @@ def extract_exif_from_image_and_move_to_dest_folder(imgs: list, config: dict) ->
         except:
             problem_list.append(image_path)
             
-    assert len(imgs) == len(success_list) + len(copy_list) + len(problem_list), "Lengths of lists do not match!"
+    assert len(imgs) == len(success_list) + len(problem_list), "Lengths of lists do not match!"
     
     end = datetime.now()
     diff_time_seconds = (end - start).seconds
@@ -457,6 +459,7 @@ def move_other_files(files: list, config: dict) -> (list, list, int):
     success_files = []
     problem_files = []
     
+    sys.stdout.flush() # Force output of previous prints()
     for file in tqdm(files):
         (path, filename_full) = os.path.split(file)
         filename = filename_full.split('.')[0]
@@ -499,7 +502,7 @@ def delete_empty_folders(directory: str, levels: int =10):
     """
     for i in range(0, levels):
         for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
-            if not dirnames and not filenames:
+            if not dirnames and not filenames and dirpath != directory:
                 os.rmdir(dirpath)
 
 
@@ -520,6 +523,7 @@ def delete_copy_pictures_from_destination(config: dict) -> (list, list):
     problem_files: list
         files that could not be deleted
     """
+    sys.stdout.flush() # Force output of previous prints()
     path = config["destination_path"]
     
     # get all files in destination folder
@@ -533,7 +537,7 @@ def delete_copy_pictures_from_destination(config: dict) -> (list, list):
     
     problem_files = []
     deleted_files = []
-    for file in quene:
+    for file in tqdm(quene):
         if os.path.isfile(file):
             org_file = file.split("Kopie")[0][:-1] + "." + file.split(".")[-1]
             size_org_file = os.path.getsize(org_file)
@@ -580,7 +584,8 @@ def final_comprehention_and_print_message(config: dict, results_dict: dict):
     ------
     
     """
-    print_mes = "\n\n-----  YEAH DONE  -----\n"
+    sys.stdout.flush() # Force output of previous prints()
+    print_mes = "\n\n\n-----  YEAH DONE  -----\n"
     
     print_mes += f"\nIn total {results_dict['all_files']['all_files_count']} elements where found in the source folder "
     print_mes += f"({results_dict['filter_with_regex']['imgages_count']} pictures, {results_dict['filter_with_regex']['others_count']} other files)\n"
@@ -638,7 +643,7 @@ def main():
                 "diff_time_exif": diff_time_exif
                 }
         
-        print("\nNow the no picture files will be sorted and moved. This could also take some time...")
+        print("\n\nNow the no picture files will be sorted and moved. This could also take some time...")
         f_sucs, f_prob, moving_time = move_other_files(files=other_files, config=config)
         results_dict["moving_others"] = {
                 "f_sucs": f_sucs,
@@ -646,10 +651,12 @@ def main():
                 "moving_time": moving_time
                 }
         
+        print("\n\n\nDelete empty folders now...")
         if str(config["delete_empty_source"]).lower() in ["true"]:
             delete_empty_folders(directory=config["source_path"])
             
         if str(config["delete_copy_pictures"]).lower() in ["true"]:
+            print("\n\nDelete copy pictures...")
             deleted_pictures, problem_pictures = delete_copy_pictures_from_destination(config=config)
         else: 
             deleted_pictures, problem_pictures = (None, None)
