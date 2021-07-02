@@ -585,13 +585,19 @@ def final_comprehention_and_print_message(config: dict, results_dict: dict):
     
     """
     sys.stdout.flush() # Force output of previous prints()
-    print_mes = "\n\n\n-----  YEAH DONE  -----\n"
+    mes = "\n\n\n-----  YEAH DONE  -----\n"
     
-    print_mes += f"\nIn total {results_dict['all_files']['all_files_count']} elements where found in the source folder "
-    print_mes += f"({results_dict['filter_with_regex']['imgages_count']} pictures, {results_dict['filter_with_regex']['others_count']} other files)\n"
+    mes += f"\nIn total {results_dict['all_files']['all_files_count']} elements where found in the source folder "
+    mes += f"({results_dict['filter_with_regex']['imgages_count']} pictures, {results_dict['filter_with_regex']['others_count']} other files)\n"
     
+    mes += f"\nSource-Path: {config['source_path']}\nDestination-Path: {config['destination_path']}\n"
     
-    print(print_mes)
+    # Info about deleted files
+    if str(config["delete_copy_pictures"]).lower() in ["true"]:
+        mes += f"\nIn total {len(results_dict['delete_copy']['deleted_pictures'])} files where deleted, because they are duplicates.\n"
+        mes += f"This deletion saves {results_dict['delete_copy']['size_diff']['size_diff_number']} {results_dict['delete_copy']['size_diff']['size_diff_unit']} in space.\n"
+    
+    print(mes)
     return None
 
 def main():
@@ -651,18 +657,26 @@ def main():
                 "moving_time": moving_time
                 }
         
-        print("\n\n\nDelete empty folders now...")
+        print("\n\n\nDelete empty folders now ...")
         if str(config["delete_empty_source"]).lower() in ["true"]:
             delete_empty_folders(directory=config["source_path"])
             
         if str(config["delete_copy_pictures"]).lower() in ["true"]:
-            print("\n\nDelete copy pictures...")
+            print("\n\nDelete copy pictures now ...")
+            size_before = get_size_of_directory(start_path=config["destination_path"])
             deleted_pictures, problem_pictures = delete_copy_pictures_from_destination(config=config)
+            size_after = get_size_of_directory(start_path=config["destination_path"])
+            size_diff_form, size_diff_unit = format_bytes(size=(size_before-size_after))
         else: 
             deleted_pictures, problem_pictures = (None, None)
+            size_diff_form, size_diff_unit = (None, None)
         results_dict["delete_copy"] = {
                 "deleted_pictures": deleted_pictures,
-                "problem_pictures": problem_pictures
+                "problem_pictures": problem_pictures,
+                "size_diff": {
+                        "size_diff_number": size_diff_form,
+                        "size_diff_unit": size_diff_unit
+                        }
                 }
             
         final_comprehention_and_print_message(config=config, results_dict=results_dict)
@@ -671,7 +685,7 @@ def main():
     else:
         print("Please check your configuration and start again!")
         
-        return results_dict
+    return results_dict
 
 
 if __name__ == "__main__":
