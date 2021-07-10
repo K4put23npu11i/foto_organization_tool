@@ -368,7 +368,7 @@ def extract_exif_from_image_and_move_to_dest_folder(imgs: list, config: dict) ->
     
     # unpack config
     output_folder = config["destination_path"]
-    if str(config["destination_path"]).lower() in ["true"]:
+    if str(config["include_year_in_destination_folder_level"]).lower() in ["true"]:
         include_year = True
     else: 
         include_year = False 
