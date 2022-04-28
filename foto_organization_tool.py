@@ -217,13 +217,17 @@ def format_bytes(size: int) -> (int, str):
     power = 2**10
     n = 0
     power_labels = {0 : '', 1: 'kilo', 2: 'mega', 3: 'giga', 4: 'tera'}
-    while size > power:
-        size /= power
-        n += 1
-        
-    new_size = round(size, 3)
-    unit = power_labels[n]+'bytes'
-    return new_size, unit
+    try:
+        while size > power:
+            size /= power
+            n += 1
+            
+        new_size = round(size, 3)
+        unit = power_labels[n]+'bytes'
+        return new_size, unit
+    except Exception as e:
+        logger.error(e)
+        return None, None
 
 
 def get_all_files_from_source(src_path: str) -> list:
