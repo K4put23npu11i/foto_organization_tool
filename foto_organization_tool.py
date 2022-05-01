@@ -398,7 +398,7 @@ def extract_exif_from_image_and_move_to_dest_folder(imgs: list, config: dict) ->
             year_str = image_time.strftime("%Y")
             year_month_str = image_time.strftime("%Y_%m")
             
-            filename = f"IMG_{image_time.strftime('%Y%m%d')}_{image_time.strftime('%H%M%S')}"
+            filename = f"{image_time.strftime('%Y-%m-%d')}_{image_time.strftime('%H-%M-%S')}"
             extension = image.format.lower()
             valid_exif = True
             
